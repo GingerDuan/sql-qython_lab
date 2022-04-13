@@ -33,7 +33,10 @@ def get_student_by_github(github):
 
     row = db_cursor.fetchone()
 
-    print(f"Student: {row[0]} {row[1]}\nGitHub account: {row[2]}")
+    if not row:
+        print(f"Cannot find {github}")
+    else:
+        print(f"Student: {row[0]} {row[1]}\nGitHub account: {row[2]}")
 
 
 def make_new_student(first_name, last_name, github):
@@ -53,6 +56,20 @@ def make_new_student(first_name, last_name, github):
     db.session.commit()
     print(f"successfully added student: {first_name} {last_name}")
 
+def make_new_project(title,description,max_grade):
+    """Add a new project and print everything"""
+
+    Query = """
+        INSERT INTO projects (title, description, max_grade)
+          VALUES (:title, :description, :grade)
+    """
+
+    db.session.execute(Query, {
+        'title':title,'description':description,'grade':max_grade
+    })
+    db.session.commit()
+    print(f"successfully added project:{title} /ndes:{description} /ngrade: {max_grade}")
+
 
 def get_project_by_title(title):
     """Given a project title, print information about the project."""
@@ -64,8 +81,11 @@ def get_project_by_title(title):
     db_cursor = db.session.execute(Query, {'title':title})
 
     row = db_cursor.fetchone()
-
-    print(f"Project:\t{row[0]}\ndescription:\t{row[1]}\ngrade:\t{row[2]}")
+    
+    if not row:
+        print(f"Cannot find {title}")
+    else:
+        print(f"Project:\t{row[0]}\ndescription:\t{row[1]}\ngrade:\t{row[2]}")
 
 def get_grade_by_github_title(github, title):
     """Print grade student received for a project."""
@@ -77,9 +97,24 @@ def get_grade_by_github_title(github, title):
 
     db_cursor = db.session.execute(Query,{'github':github,'title':title})
 
+    dataone = db_cursor.fetchone()
+
+    print(f"datalist:{dataone}")
+
+def get_grade_by_github(github):
+    """Print grade student received and the project title."""
+    Query = """
+            SELECT project_title,grade            FROM grades
+            WHERE student_github = :github
+    """
+
+    db_cursor = db.session.execute(Query,{'github':github})
+
     datalist = db_cursor.fetchall()
 
-    print(f"datalist:{datalist}")
+    for data in datalist:
+        title,grade = data
+        print(f"project_title:{title} grade:{grade}")
 
 def assign_grade(github, title, grade):
     """Assign a student a grade on an assignment and print a confirmation."""
@@ -121,6 +156,10 @@ def handle_input():
         elif command == "project":
             title = args[0]
             get_project_by_title(title)
+        
+        elif command == "new_project":
+            title,description,grade = args
+            get_project_by_title(title,description,grade)
 
         elif command == "get_grade":
             github, title = args
